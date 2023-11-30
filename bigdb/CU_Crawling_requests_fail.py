@@ -26,7 +26,7 @@ for product in products:
 
 print(product_info)
 
-print(category_texts)
+
 
 
 
