@@ -4,15 +4,20 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys # 키 조작을 위해
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException #요소가 페이지에 없을 때
-from webdriver_manager.chrome import ChromeDriverManager
+#from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.action_chains import ActionChains
 
+
 import time #대기시간 지연
+import csv
+import pandas as pd
+from tqdm import tqdm
 
 # 1. 웹드라이버 초기화
-service = ChromeService(executable_path=ChromeDriverManager().install())   # chrome 최신 버전 유지
-driver = webdriver.Chrome(service= Service(ChromeDriverManager().install())) #wedriver 설치 경로
+service = Service()
+options = webdriver.ChromeOptions()
+driver = webdriver.Chrome(service=service, options=options) #wedriver 설치 경로
 
 #CU편의점 url
 URL = "https://cu.bgfretail.com/product/product.do?category=product&depth2=4&sf=N"
@@ -25,20 +30,20 @@ product_names,product_prices, product_sub, product_main = [], [], [], []
 MAINCATEGORY={
     '10':'간편식사',
     '20':'즉석조리',
-    '30':'과자류',
-    '40':'아이스크림',
-    '50':'식품',
-    '60':'음료',
+    #'30':'과자류',
+    #'40':'아이스크림',
+    #'50':'식품',
+    #'60':'음료',
 #    '70':'생활용품',
 }
 
 SUBCATEGORY={
     '10':{'도시락','샌드위치/햄버거','주먹밥/김밥'},
     '20':{'튀김류','베이커리','즉석커피'},
-    '30':{'스낵/비스켓','빵/디저트','껌/초콜릿/캔디'},
-    '40':{'아이스크림'},
-    '50':{'가공식품','안주류','식재료'},
-    '60':{'음료','아이스드링크','유제품'},
+    #'30':{'스낵/비스켓','빵/디저트','껌/초콜릿/캔디'},
+    #'40':{'아이스크림'},
+    #'50':{'가공식품','안주류','식재료'},
+    #'60':{'음료','아이스드링크','유제품'},
 #    '70':{'취미/레저','의약외품','신변잡화','생활 잡화'}
 }
 
@@ -140,6 +145,14 @@ def getProductInfo(soup, main, sub, products):
 category_data = {}
 
 try:
+    #4. 데이터 프레임 생성
+    df = pd.DataFrame({
+        '메인분류': product_main,
+        '서브분류': product_sub,
+        '상품명': product_names,
+        '가격': product_prices
+    })
+
     for main_cat, main_name in MAINCATEGORY.items():
         print(f"Processing main category: {main_name}")
         goMain(main_cat)
@@ -152,7 +165,7 @@ try:
             print(f"Processing sub category: {sub_cat}")
             sub_cat_num = getSubCategoryNumber(main_cat, sub_cat)  # 메인 카테고리와 서브 카테고리 인자 전달
             goSub(sub_cat_num)
-            clickMore()
+            #clickMore()
             soup = BeautifulSoup(driver.page_source, 'html.parser')
 
             # 서브 카테고리의 제품 정보를 담을 리스트 초기화
@@ -171,8 +184,115 @@ try:
             for product in products:
                 # 제품 이름과 가격을 함께 출력
                 print(f"Product Name: {product['name']}, Price: {product['price']}")
+    # category_data 딕셔너리를 이용하여 DataFrame 생성
+    rows = []
+    for main_cat, sub_cats in category_data.items():
+        for sub_cat, products in sub_cats.items():
+            for product in products:
+                rows.append({
+                    '메인분류': main_cat,
+                    '서브분류': sub_cat,
+                    '상품명': product['name'],
+                    '가격': product['price']
+                })
+
+    df = pd.DataFrame(rows)
+
+    #매핑
+    # category_map = {'간편식사': 'a', '즉석조리': 'b', '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
+    # df['ID'] = df['메인분류'].map(category_map)
+    # df['그룹별INDEX']=df.groupby('ID').cumcount()+1
+    # df['ID']=df['ID']+df['그룹별INDEX'].astype(str)
+    # df.set_index('ID',inplace=True)
+    # #그룹별 INDEX 칼럼 삭제
+    # df.drop('그룹별INDEX',axis=1,inplace=True) #axis=1 열 
+    # df.shape[0] #전체 데이터 개수
+    # df.tail(10)
+
+    # df['가격'] = df['가격'].str.replace(',', '')  # 콤마(,) 제거
+    # df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
+
+    # # DataFrame을 CSV 파일로 저장
+    # df.to_csv('./편의점크롤링.csv', index=False, encoding='cp949', mode = 'w')
+    # DataFrame에 추가 변경사항 적용
+
+    # 다시 돌아가고 싶으면 여기 주석 푸셈
+    # category_map = {'간편식사': 'a', '즉석조리': 'b'}#, '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
+    # df['ID'] = df['메인분류'].map(category_map)
+    # df['그룹별INDEX'] = df.groupby('ID').cumcount() + 1
+    # df['ID'] = df['ID'] + df['그룹별INDEX'].astype(str)
+    # df['가격'] = df['가격'].astype(str).str.replace(',', '')
+    # df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
+
+    # # 여기서 set_index를 사용하지 않고, 'ID' 열을 유지합니다.
+    # df.set_index('ID', inplace=True)
+    # df.drop('그룹별INDEX', axis=1, inplace=True)
+    # df.shape[0]
+    # #df.drop('그룹별INDEX', axis=1, inplace=True)
+
+    # # 변경사항을 적용한 DataFrame을 CSV 파일로 저장
+    # df.to_csv('./편의점크롤링.csv', index=False, encoding='cp949')
+
+    # # 저장된 CSV 파일 확인
+    # df = pd.read_csv('./편의점크롤링.csv', encoding='cp949')
+    # print(df.tail(10))
+   
+
 
 except Exception as e:
     print("An error occurred:", e)
 finally:
     driver.quit()
+
+category_map = {'간편식사': 'a', '즉석조리': 'b'}#, '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
+df['ID'] = df['메인분류'].map(category_map)
+df['그룹별INDEX'] = df.groupby('ID').cumcount() + 1
+df['ID'] = df['ID'] + df['그룹별INDEX'].astype(str)
+
+# 여기서 set_index를 사용하지 않고, 'ID' 열을 유지합니다.
+df.set_index('ID', inplace=True)
+df.drop('그룹별INDEX', axis=1, inplace=True)
+df.shape[0]
+#df.drop('그룹별INDEX', axis=1, inplace=True)
+df['가격'] = df['가격'].astype(str).str.replace(',', '')
+df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
+
+# 변경사항을 적용한 DataFrame을 CSV 파일로 저장
+df.to_csv('./편의점크롤링.csv', encoding='cp949')
+
+# 저장된 CSV 파일 확인
+df = pd.read_csv('./편의점크롤링.csv', encoding='cp949')
+print(df.tail(10))
+
+# df = pd.DataFrame({
+#     '메인분류': product_main,
+#     '서브분류': product_sub,
+#     '상품명': product_names,
+#     '가격': product_prices
+# })
+
+# df.tail(20)
+
+# #df.to_csv('./편의점크롤링.csv',index=False, encoding='cp949',mode='w')
+
+# df = pd.read_csv('./편의점크롤링.csv',encoding='cp949')
+# df.tail(10)
+
+# main_category=df['메인분류'].unique() #메인분류 값 확인 
+# print(main_category)
+
+# #매핑
+# category_map = {'간편식사': 'a', '즉석조리': 'b', '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
+# df['ID'] = df['메인분류'].map(category_map)
+# df['그룹별INDEX']=df.groupby('ID').cumcount()+1
+# df['ID']=df['ID']+df['그룹별INDEX'].astype(str)
+# df.set_index('ID',inplace=True)
+# #그룹별 INDEX 칼럼 삭제
+# df.drop('그룹별INDEX',axis=1,inplace=True) #axis=1 열 
+# df.shape[0] #전체 데이터 개수
+# df.tail(10)
+
+# df['가격'] = df['가격'].str.replace(',', '')  # 콤마(,) 제거
+# df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
+
+# df.to_csv('./편의점크롤링.csv',encoding='cp949',mode='w')
