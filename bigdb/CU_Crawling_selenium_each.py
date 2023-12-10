@@ -4,7 +4,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys # 키 조작을 위해
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException #요소가 페이지에 없을 때
-#from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.action_chains import ActionChains
 
@@ -30,26 +29,23 @@ product_names,product_prices, product_sub, product_main = [], [], [], []
 MAINCATEGORY={
     '10':'간편식사',
     '20':'즉석조리',
-    #'30':'과자류',
-    #'40':'아이스크림',
-    #'50':'식품',
-    #'60':'음료',
+    '30':'과자류',
+    '40':'아이스크림',
+    '50':'식품',
+    '60':'음료',
 #    '70':'생활용품',
 }
 
 SUBCATEGORY={
     '10':{'도시락','샌드위치/햄버거','주먹밥/김밥'},
     '20':{'튀김류','베이커리','즉석커피'},
-    #'30':{'스낵/비스켓','빵/디저트','껌/초콜릿/캔디'},
-    #'40':{'아이스크림'},
-    #'50':{'가공식품','안주류','식재료'},
-    #'60':{'음료','아이스드링크','유제품'},
-#    '70':{'취미/레저','의약외품','신변잡화','생활 잡화'}
+    '30':{'스낵/비스켓','빵/디저트','껌/초콜릿/캔디'},
+    '40':{'아이스크림'},
+    '50':{'가공식품','안주류','식재료'},
+    '60':{'음료','아이스드링크','유제품'},
+#   '70':{'취미/레저','의약외품','신변잡화','생활 잡화'}
 }
 
-# def scroll_to_element(element):
-#     actions = ActionChains(driver)
-#     actions.move_to_element(element).perform()
 
 def click_element_with_js(element):
     driver.execute_script("arguments[0].click();", element)
@@ -83,21 +79,7 @@ def goMain(category):
     driver.execute_script(script) #스크립트 실행
     time.sleep(2)
 
-#[code 3]goSub함수 #파이썬 스크롤 사용
-# def goSub(num):
-#     class_format="eventInfo_{:02d}".format(num) #문자열포맷팅
-#     #현재 HTML에서 해당 클래스가 존재하는지 확인
-#     try:
-#         driver.find_element(By.CLASS_NAME, class_format)
-#     except NoSuchElementException:
-#         print('NO')
-#         return 
-#     #클래스가 존재하는 경우 
-#     li_element = driver.find_element(By.CLASS_NAME, class_format)
-#     a_element = li_element.find_element(By.TAG_NAME, "a")
-#     scroll_to_element(a_element)
-#     a_element.click()
-#     time.sleep(1)
+
 
 #goSub 함수 자바스크립트 사용
 def goSub(num):
@@ -165,7 +147,7 @@ try:
             print(f"Processing sub category: {sub_cat}")
             sub_cat_num = getSubCategoryNumber(main_cat, sub_cat)  # 메인 카테고리와 서브 카테고리 인자 전달
             goSub(sub_cat_num)
-            #clickMore()
+            clickMore()
             soup = BeautifulSoup(driver.page_source, 'html.parser')
 
             # 서브 카테고리의 제품 정보를 담을 리스트 초기화
@@ -198,53 +180,12 @@ try:
 
     df = pd.DataFrame(rows)
 
-    #매핑
-    # category_map = {'간편식사': 'a', '즉석조리': 'b', '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
-    # df['ID'] = df['메인분류'].map(category_map)
-    # df['그룹별INDEX']=df.groupby('ID').cumcount()+1
-    # df['ID']=df['ID']+df['그룹별INDEX'].astype(str)
-    # df.set_index('ID',inplace=True)
-    # #그룹별 INDEX 칼럼 삭제
-    # df.drop('그룹별INDEX',axis=1,inplace=True) #axis=1 열 
-    # df.shape[0] #전체 데이터 개수
-    # df.tail(10)
-
-    # df['가격'] = df['가격'].str.replace(',', '')  # 콤마(,) 제거
-    # df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
-
-    # # DataFrame을 CSV 파일로 저장
-    # df.to_csv('./편의점크롤링.csv', index=False, encoding='cp949', mode = 'w')
-    # DataFrame에 추가 변경사항 적용
-
-    # 다시 돌아가고 싶으면 여기 주석 푸셈
-    # category_map = {'간편식사': 'a', '즉석조리': 'b'}#, '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
-    # df['ID'] = df['메인분류'].map(category_map)
-    # df['그룹별INDEX'] = df.groupby('ID').cumcount() + 1
-    # df['ID'] = df['ID'] + df['그룹별INDEX'].astype(str)
-    # df['가격'] = df['가격'].astype(str).str.replace(',', '')
-    # df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
-
-    # # 여기서 set_index를 사용하지 않고, 'ID' 열을 유지합니다.
-    # df.set_index('ID', inplace=True)
-    # df.drop('그룹별INDEX', axis=1, inplace=True)
-    # df.shape[0]
-    # #df.drop('그룹별INDEX', axis=1, inplace=True)
-
-    # # 변경사항을 적용한 DataFrame을 CSV 파일로 저장
-    # df.to_csv('./편의점크롤링.csv', index=False, encoding='cp949')
-
-    # # 저장된 CSV 파일 확인
-    # df = pd.read_csv('./편의점크롤링.csv', encoding='cp949')
-    # print(df.tail(10))
-   
-
-
 except Exception as e:
     print("An error occurred:", e)
 finally:
     driver.quit()
 
-category_map = {'간편식사': 'a', '즉석조리': 'b'}#, '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
+category_map = {'간편식사': 'a', '즉석조리': 'b', '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
 df['ID'] = df['메인분류'].map(category_map)
 df['그룹별INDEX'] = df.groupby('ID').cumcount() + 1
 df['ID'] = df['ID'] + df['그룹별INDEX'].astype(str)
@@ -263,36 +204,3 @@ df.to_csv('./편의점크롤링.csv', encoding='cp949')
 # 저장된 CSV 파일 확인
 df = pd.read_csv('./편의점크롤링.csv', encoding='cp949')
 print(df.tail(10))
-
-# df = pd.DataFrame({
-#     '메인분류': product_main,
-#     '서브분류': product_sub,
-#     '상품명': product_names,
-#     '가격': product_prices
-# })
-
-# df.tail(20)
-
-# #df.to_csv('./편의점크롤링.csv',index=False, encoding='cp949',mode='w')
-
-# df = pd.read_csv('./편의점크롤링.csv',encoding='cp949')
-# df.tail(10)
-
-# main_category=df['메인분류'].unique() #메인분류 값 확인 
-# print(main_category)
-
-# #매핑
-# category_map = {'간편식사': 'a', '즉석조리': 'b', '과자류': 'c', '아이스크림': 'd', '식품': 'e', '음료': 'f'}
-# df['ID'] = df['메인분류'].map(category_map)
-# df['그룹별INDEX']=df.groupby('ID').cumcount()+1
-# df['ID']=df['ID']+df['그룹별INDEX'].astype(str)
-# df.set_index('ID',inplace=True)
-# #그룹별 INDEX 칼럼 삭제
-# df.drop('그룹별INDEX',axis=1,inplace=True) #axis=1 열 
-# df.shape[0] #전체 데이터 개수
-# df.tail(10)
-
-# df['가격'] = df['가격'].str.replace(',', '')  # 콤마(,) 제거
-# df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
-
-# df.to_csv('./편의점크롤링.csv',encoding='cp949',mode='w')
