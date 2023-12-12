@@ -1,27 +1,27 @@
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.keys import Keys # 키 조작을 위해
+from selenium.webdriver.common.keys import Keys 
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException #요소가 페이지에 없을 때
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.action_chains import ActionChains
 
 
-import time #대기시간 지연
+import time
 import csv
 import pandas as pd
 from tqdm import tqdm
 
-# 1. 웹드라이버 초기화
+
 service = Service()
 options = webdriver.ChromeOptions()
-driver = webdriver.Chrome(service=service, options=options) #wedriver 설치 경로
+driver = webdriver.Chrome(service=service, options=options) 
 
 #CU편의점 url
 URL = "https://cu.bgfretail.com/product/product.do?category=product&depth2=4&sf=N"
-driver.get(URL) #웹페이지 열기
-time.sleep(1) #대기
+driver.get(URL) 
+time.sleep(1) 
 
 product_names,product_prices, product_sub, product_main = [], [], [], []
 
@@ -190,17 +190,14 @@ df['ID'] = df['메인분류'].map(category_map)
 df['그룹별INDEX'] = df.groupby('ID').cumcount() + 1
 df['ID'] = df['ID'] + df['그룹별INDEX'].astype(str)
 
-# 여기서 set_index를 사용하지 않고, 'ID' 열을 유지합니다.
 df.set_index('ID', inplace=True)
 df.drop('그룹별INDEX', axis=1, inplace=True)
 df.shape[0]
-#df.drop('그룹별INDEX', axis=1, inplace=True)
+
 df['가격'] = df['가격'].astype(str).str.replace(',', '')
 df['가격'] = df['가격'].astype(int)  # int 형식으로 변환
 
-# 변경사항을 적용한 DataFrame을 CSV 파일로 저장
 df.to_csv('./편의점크롤링.csv', encoding='cp949')
 
-# 저장된 CSV 파일 확인
 df = pd.read_csv('./편의점크롤링.csv', encoding='cp949')
 print(df.tail(10))

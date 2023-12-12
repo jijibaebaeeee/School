@@ -1,6 +1,11 @@
 import pymysql
 from db_setting import db
-from CU_Crawling_selenium_each import MAINCATEGORY, SUBCATEGORY
+import pandas as pd
+# from CU_Crawling_selenium_each import MAINCATEGORY, SUBCATEGORY
+
+#csv 파일 열기
+file_path = '편의점크롤링.csv'
+data = pd.read_csv(file_path, encoding='cp949')
 
 connection = pymysql.connect(host = db['host'], user = db['Username'], password = db['Password'], db = 'Convenience_store', charset='utf8', cursorclass=pymysql.cursors.DictCursor)
 
