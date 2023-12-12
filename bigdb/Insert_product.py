@@ -1,44 +1,49 @@
 import pymysql
-from db_setting import db
 import pandas as pd
-# from CU_Crawling_selenium_each import MAINCATEGORY, SUBCATEGORY
+from db_setting import db
 
-#csv 파일 열기
-file_path = '편의점크롤링.csv'
-data = pd.read_csv(file_path, encoding='cp949')
+# 엑셀 파일 읽기
+df = pd.read_csv('편의점크롤링_행사.csv', encoding='cp949')
 
-connection = pymysql.connect(host = db['host'], user = db['Username'], password = db['Password'], db = 'Convenience_store', charset='utf8', cursorclass=pymysql.cursors.DictCursor)
+# NaN 값이 있는지 확인하고, 있다면 None으로 대체합니다.
+df = df.where(pd.notnull(df), None)
+
+# category_map 정의
+category_map = {'a': '간편식사', 'b': '즉석조리', 'c': '과자류', 'd': '아이스크림', 'e': '식품', 'f': '음료'}
+
+# 데이터베이스 연결
+conn = pymysql.connect(host=db['host'], port=db['port'], 
+                       user=db['Username'], passwd=db['Password'], 
+                       db='store', charset='utf8mb4')
 
 try:
-    with connection.cursor() as cursor:
-        # MAINCATEGORY의 데이터 삽입
-        for main_id, main_name in MAINCATEGORY.items():
-            sql = "INSERT INTO `category` (`main_id`, `name`) VALUES (%s, %s)"
-            cursor.execute(sql, (main_id, main_name))
-            # SUBCATEGORY의 데이터 삽입
-            for sub_id, sub_name in enumerate(SUBCATEGORY[main_id], 1):
-                sql = "INSERT INTO `Sub_category` (`sub_id`, `name`) VALUES (%s, %s)"
-                cursor.execute(sql, (sub_id, sub_name))
+    with conn.cursor() as cursor:
+        for index, row in df.iterrows():
+            # main_id 매핑
+            main_id = [key for key, value in category_map.items() if value == row['메인분류']][0] if row['메인분류'] else None
 
-  # 변경사항 커밋
-    connection.commit()
+            # sub_id 조회
+            if row['서브분류']:
+                cursor.execute("SELECT sub_id FROM Sub_category WHERE main_id = %s AND name = %s", (main_id, row['서브분류']))
+                sub_result = cursor.fetchone()
+                sub_id = sub_result[0] if sub_result else None
+            else:
+                sub_id = None
 
+            # event_id 조회 (이벤트 이름이 엑셀 데이터에 있는 경우)
+            event_name = row['행사']  # 이벤트 이름 열의 이름을 '행사'로 가정
+            if event_name and event_name != 'NULL':  # None 이거나 'NULL'이 아닌 경우에만 조회
+                cursor.execute("SELECT event_id FROM Event WHERE event_name = %s", (event_name,))
+                event_result = cursor.fetchone()
+                event_id = event_result[0] if event_result else None
+            else:
+                event_id = None
+
+            # INSERT 쿼리 실행
+            sql = "INSERT INTO Product (product_id, main_id, sub_id, name, price, event_id) VALUES (%s, %s, %s, %s, %s, %s)"
+            cursor.execute(sql, (row['ID'], main_id, sub_id, row['상품명'], row['가격'], event_id))
+
+    # 변경 사항 저장
+    conn.commit()
 finally:
-    connection.close()
-
-
-
-
-# try:
-#     with conn.corsor() as curs:
-#         sql = "INSERT INTO category VALUES"
-#         curs.execute() # 실행할 sql문 넣기
-#         rs = curs.fetchall() # sql문 실행해서 데이터 가져오기
-
-#         for row in rs:
-#             for data in row:
-#                 print(data, end=' ')
-#             print()
-
-# finally:
-#     conn.clsoe()
+    conn.close()
